@@ -30,6 +30,7 @@ class PyxlCanvas:
         self.width = width * self.px
         self.height = height * self.px
         self.cursor = PyxlCursor()
+        self.bg = bg
         
         self.outer = Frame(parent, width=self.width, height=self.height, bg=self.htc(bg))
         self.outer.pack(expand=True, fill=BOTH)
@@ -56,13 +57,20 @@ class PyxlCanvas:
         return "#" + s
 
     def draw_one_pixel(self, x, y):
-            color = self.htc(self.img[y][x])
-            x1 = x * self.px
-            y1 = y * self.px
-            x2 = x1 + self.px
-            y2 = y1 + self.px
-            self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="", width=0)
+        color = self.htc(self.img[y][x])
+        x1 = x * self.px
+        y1 = y * self.px
+        x2 = x1 + self.px
+        y2 = y1 + self.px
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="", width=0)
         
+    def erase_one_pixel(self, x, y):
+        color = self.htc(self.bg)
+        x1 = x * self.px
+        y1 = y * self.px
+        x2 = x1 + self.px
+        y2 = y1 + self.px
+        self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=color)
 
     def draw(self):
         for i, row in enumerate(self.img):
@@ -70,6 +78,11 @@ class PyxlCanvas:
                 self.draw_one_pixel(j, i)
         
         self.cursor.draw(self.canvas, self.px)
+
+    def clear(self):
+        for i, row in enumerate(self.img):
+            for j, col in enumerate(row):
+                self.erase_one_pixel(j, i)
 
     def resize(self):
         self.width = self.imgw * self.px
@@ -80,11 +93,13 @@ class PyxlCanvas:
 
 
     def on_zoom_in(self, event):
+        self.clear()
         self.px += 1
         self.resize()
         self.draw()
 
     def on_zoom_out(self, event):
+        self.clear()
         self.px = max(self.px - 1, 1)
         self.resize()
         self.draw()
@@ -93,7 +108,8 @@ class PyxlCanvas:
         pass
 
     def on_erase(self, event):
-        pass
+        self.erase_one_pixel(self.cursor.x, self.cursor.y)
+        self.img[self.cursor.y][self.cursor.x] = self.bg
 
     def clear_cursor(self):
         self.draw_one_pixel(self.cursor.x, self.cursor.y)
