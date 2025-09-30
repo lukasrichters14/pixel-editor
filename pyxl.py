@@ -56,33 +56,24 @@ class PyxlCanvas:
         s = ("0" * (6 - len(s))) + s
         return "#" + s
 
-    def draw_one_pixel(self, x, y):
-        color = self.htc(self.img[y][x])
+    def draw_one_pixel(self, x, y, color):
         x1 = x * self.px
         y1 = y * self.px
         x2 = x1 + self.px
         y2 = y1 + self.px
         self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="", width=0)
         
-    def erase_one_pixel(self, x, y):
-        color = self.htc(self.bg)
-        x1 = x * self.px
-        y1 = y * self.px
-        x2 = x1 + self.px
-        y2 = y1 + self.px
-        self.canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline=color)
-
     def draw(self):
         for i, row in enumerate(self.img):
             for j, col in enumerate(row):
-                self.draw_one_pixel(j, i)
+                self.draw_one_pixel(j, i, self.htc(col))
         
         self.cursor.draw(self.canvas, self.px)
 
     def clear(self):
         for i, row in enumerate(self.img):
             for j, col in enumerate(row):
-                self.erase_one_pixel(j, i)
+                self.draw_one_pixel(j, i, self.htc(self.bg))
 
     def resize(self):
         self.width = self.imgw * self.px
@@ -90,7 +81,6 @@ class PyxlCanvas:
 
         self.outer.config(width=self.width, height=self.height)
         self.canvas.config(width=self.width, height=self.height, scrollregion=(0,0,self.width,self.height))
-
 
     def on_zoom_in(self, event):
         self.clear()
@@ -108,11 +98,11 @@ class PyxlCanvas:
         pass
 
     def on_erase(self, event):
-        self.erase_one_pixel(self.cursor.x, self.cursor.y)
+        self.draw_one_pixel(self.cursor.x, self.cursor.y, self.htc(self.bg))
         self.img[self.cursor.y][self.cursor.x] = self.bg
 
     def clear_cursor(self):
-        self.draw_one_pixel(self.cursor.x, self.cursor.y)
+        self.draw_one_pixel(self.cursor.x, self.cursor.y, self.htc(self.img[self.cursor.y][self.cursor.x]))
 
     def on_cursor_left(self, event):
         self.clear_cursor()
@@ -145,6 +135,8 @@ def meta_bind(r, keys, callback):
 
 def main():
     root = Tk()
+
+    t = Frame(root, bg="#ffffff")
     c = PyxlCanvas(root, 32, 32)
     
     root.bind("i", c.on_zoom_in)
